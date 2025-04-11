@@ -1,5 +1,5 @@
 import {mutation, query} from './_generated/server';
-import {v} from "convex/values"
+import {ConvexError, v} from "convex/values"
 import { getAuthendicatedUser } from './users';
 
 export const generateUploadUrl = mutation(async (ctx)=>{
@@ -116,5 +116,57 @@ export const addComment = mutation({
         postId:v.id("posts"),
         comment:v.string(),
     },
-    handler:async(ctx,args)=>{}
+    handler:async(ctx,args)=>{
+        const currentUser = await getAuthendicatedUser(ctx)
+        const post = await ctx.db.get(args.postId)
+        if (!post) {
+            throw new ConvexError("Post not found");
+        }
+        if (args.comment.length > 280) {
+            throw new ConvexError("Comment must be less than 280 characters");
+        }
+        const commentId = await ctx.db.insert("comments",{
+            userId:currentUser._id,
+            postId:args.postId,
+            comment:args.comment,
+        })
+        await ctx.db.patch(args.postId,{
+            comments:post.comments+1
+        })
+        if (currentUser._id !== post.userId) {
+            await ctx.db.insert("notifications", {
+                receiverId: post.userId,
+                senderId: currentUser._id,
+                type: "comment",
+                postId: args.postId,
+                commentId
+            });
+        }
+        return commentId;
+
+    }
+})
+export const getComments = query({
+    args:{
+        postId:v.id("posts"),
+    },
+    handler:async(ctx,args)=>{
+        
+        const comments = await ctx.db.query("comments").withIndex("by_post",(q)=>q.eq("postId",args.postId)).order("desc").collect()
+        if(comments.length === 0){
+            return []
+        }
+        const commentsWithUser = await Promise.all(comments.map(async(comment)=>{
+            const user = (await ctx.db.get(comment.userId))!
+            return {
+                ...comment,
+                user:{
+                    _id:user._id,
+                    username:user!.username,
+                    image:user!.image,
+                }
+            }
+        }))
+        return commentsWithUser
+    }
 })
