@@ -6,10 +6,11 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@/constants/theme";
 import { Id } from "@/convex/_generated/dataModel";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import CommentsSection from "./CommentsSection";
 import { formatDistanceToNow } from "date-fns";
+import { useUser } from "@clerk/clerk-expo";
 type PostType = {
   _id: Id<"posts">;
   imageUrl: string;
@@ -29,9 +30,17 @@ type PostType = {
 export default function Post({ post }: { post: PostType }) {
   const [isLiked, setIsLiked] = useState(post.isLiked);
   const [likesCount, setLikesCount] = useState(post.likes);
+  const [isBookmarked, setIsBookmarked] = useState(post.isBookmarked);
   const [commentsCount, setCommentsCount] = useState(post.comments);
   const [showComments, setShowComments] = useState(false);
+  const { user } = useUser();
+  const currentUser = useQuery(
+    api.users.getUserByClerkId,
+    user ? { clerkId: user.id } : "skip"
+  );
   const toggleLike = useMutation(api.posts.toggleLike);
+  const toggleBookmark = useMutation(api.bookmarks.toggleBookmark);
+  const deletePost = useMutation(api.posts.deletePost);
   const handleLike = async () => {
     try {
       const newIsLiked = await toggleLike({
@@ -41,6 +50,25 @@ export default function Post({ post }: { post: PostType }) {
       setLikesCount((prev) => prev + (newIsLiked ? 1 : -1));
     } catch (error) {
       console.error("Error liking post:", error);
+    }
+  };
+  const handleBookmark = async () => {
+    try {
+      const newIsBookmarked = await toggleBookmark({
+        postId: post._id,
+      });
+      setIsBookmarked(newIsBookmarked);
+    } catch (error) {
+      console.error("Error bookmarking post:", error);
+    }
+  };
+  const handleDelete = async () => {
+    try {
+      await deletePost({
+        postId: post._id,
+      });
+    } catch (error) {
+      console.error("Error deleting post:", error);
     }
   };
   return (
@@ -58,12 +86,19 @@ export default function Post({ post }: { post: PostType }) {
             <Text style={styles.postUsername}>{post.author.username}</Text>
           </TouchableOpacity>
         </Link>
-        {/* <TouchableOpacity>
-          <Ionicons name="ellipsis-horizontal" size={20} color={COLORS.white} />
-        </TouchableOpacity> */}
-        <TouchableOpacity>
-          <Ionicons name="trash-outline" size={20} color={COLORS.white} />
-        </TouchableOpacity>
+        {post.author._id === currentUser?._id ? (
+          <TouchableOpacity onPress={handleDelete}>
+            <Ionicons name="trash-outline" size={20} color={COLORS.primary} />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity>
+            <Ionicons
+              name="ellipsis-horizontal"
+              size={20}
+              color={COLORS.white}
+            />
+          </TouchableOpacity>
+        )}
       </View>
 
       <Image
@@ -90,8 +125,12 @@ export default function Post({ post }: { post: PostType }) {
             />
           </TouchableOpacity>
         </View>
-        <TouchableOpacity>
-          <Ionicons name="bookmark-outline" size={22} color={COLORS.white} />
+        <TouchableOpacity onPress={handleBookmark}>
+          <Ionicons
+            name={isBookmarked ? "bookmark" : "bookmark-outline"}
+            size={22}
+            color={COLORS.white}
+          />
         </TouchableOpacity>
       </View>
       <View style={styles.postInfo}>
