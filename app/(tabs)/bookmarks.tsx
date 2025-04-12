@@ -1,10 +1,83 @@
-import { View, Text } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import React from "react";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import Loader from "@/components/Loader";
+import { COLORS } from "@/constants/theme";
+import { styles } from "@/styles/feed.style";
+import { Image } from "expo-image";
 
-export default function bookmarks() {
+export default function Bookmarks() {
+  const bookmarkedPosts = useQuery(api.bookmarks.getBookmarks);
+  if (bookmarkedPosts === undefined) return <Loader />;
+  if (bookmarkedPosts.length === 0) return <NoBookmarksFound />;
+
   return (
-    <View>
-      <Text>bookmarks</Text>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Bookmarks</Text>
+      </View>
+      <ScrollView
+        contentContainerStyle={{
+          padding: 8,
+          flexDirection: "row",
+          flexWrap: "wrap",
+        }}
+      >
+        {bookmarkedPosts.map((post) => (
+          <View
+            key={post?._id}
+            style={{
+              width: "33.3%",
+              padding: 1,
+            }}
+          >
+            <Image
+              source={{ uri: post?.imageUrl }}
+              style={{
+                width: "100%",
+                aspectRatio: 1,
+              }}
+              contentFit="cover"
+              transition={200}
+              cachePolicy={"memory-disk"}
+            />
+            <Text
+              style={{
+                color: COLORS.primary,
+                fontSize: 16,
+                fontWeight: "bold",
+                marginTop: 4,
+              }}
+            >
+              {post?.caption}
+            </Text>
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+function NoBookmarksFound() {
+  return (
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: COLORS.background,
+      }}
+    >
+      <Text
+        style={{
+          color: COLORS.primary,
+          fontSize: 22,
+          fontWeight: "bold",
+        }}
+      >
+        No Bookmarks Found
+      </Text>
     </View>
   );
 }
