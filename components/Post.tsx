@@ -29,9 +29,7 @@ type PostType = {
 
 export default function Post({ post }: { post: PostType }) {
   const [isLiked, setIsLiked] = useState(post.isLiked);
-  const [likesCount, setLikesCount] = useState(post.likes);
   const [isBookmarked, setIsBookmarked] = useState(post.isBookmarked);
-  const [commentsCount, setCommentsCount] = useState(post.comments);
   const [showComments, setShowComments] = useState(false);
   const { user } = useUser();
   const currentUser = useQuery(
@@ -47,7 +45,6 @@ export default function Post({ post }: { post: PostType }) {
         postId: post._id,
       });
       setIsLiked(newIsLiked);
-      setLikesCount((prev) => prev + (newIsLiked ? 1 : -1));
     } catch (error) {
       console.error("Error liking post:", error);
     }
@@ -142,8 +139,8 @@ export default function Post({ post }: { post: PostType }) {
       </View>
       <View style={styles.postInfo}>
         <Text style={styles.likesText}>
-          {likesCount > 0
-            ? `${likesCount.toLocaleString()} likes`
+          {post.likes > 0
+            ? `${post.likes.toLocaleString()} likes`
             : "İlk beğenen sen ol"}
         </Text>
         {post.caption && (
@@ -152,9 +149,9 @@ export default function Post({ post }: { post: PostType }) {
             <Text style={styles.captionText}>{post.caption}</Text>
           </View>
         )}
-        {commentsCount > 0 && (
+        {post.comments > 0 && (
           <TouchableOpacity onPress={() => setShowComments(true)}>
-            <Text style={styles.commentText}>{commentsCount} yorumu gör</Text>
+            <Text style={styles.commentText}>{post.comments} yorumu gör</Text>
           </TouchableOpacity>
         )}
         <Text style={styles.timeAgo}>
@@ -167,7 +164,6 @@ export default function Post({ post }: { post: PostType }) {
         postId={post._id}
         visible={showComments}
         onClose={() => setShowComments(false)}
-        onCommentAdded={() => setCommentsCount((prev) => prev + 1)}
       />
     </View>
   );

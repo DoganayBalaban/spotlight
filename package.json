@@ -48,7 +48,8 @@
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
     "svix": "^1.63.0",
-    "expo-navigation-bar": "~4.0.9"
+    "expo-navigation-bar": "~4.0.9",
+    "expo-dev-client": "~5.0.20"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

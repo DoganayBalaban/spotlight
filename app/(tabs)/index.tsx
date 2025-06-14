@@ -14,15 +14,24 @@ import {
   Image,
   ScrollView,
   FlatList,
+  RefreshControl,
 } from "react-native";
 import Post from "../../components/Post";
 import Loader from "@/components/Loader";
+import { useState } from "react";
 
 const Index = () => {
+  const [refreshing, setRefreshing] = useState(false);
   const { signOut } = useAuth();
   const posts = useQuery(api.posts.getFeedPosts);
   if (posts === undefined) return <Loader />;
   if (posts.length === 0) return <NoPostFound />;
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  };
   return (
     <View style={styles.container}>
       {/* HEADER */}
@@ -43,6 +52,15 @@ const Index = () => {
           paddingBottom: 60,
         }}
         ListHeaderComponent={<StoriesSection />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
+            progressBackgroundColor={COLORS.background}
+          />
+        }
       />
     </View>
   );
