@@ -93,6 +93,7 @@ export const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 8,
     alignItems: "center",
+    justifyContent: "center",
   },
   editButtonText: {
     color: COLORS.white,

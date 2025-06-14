@@ -204,3 +204,17 @@ export const getComments = query({
         return commentsWithUser
     }
 })
+export const getPostByUser = query({
+    args:{
+        userId:v.optional(v.id("users")),
+    },
+    handler:async(ctx,args)=>{
+        const user = args.userId ? await ctx.db.get(args.userId) : await getAuthendicatedUser(ctx);
+        if (!user) {
+            throw new ConvexError("User not found");
+        }
+        const posts = await ctx.db.query("posts").withIndex("by_user",(q)=>q.eq("userId",args.userId || user._id)).order("desc").collect();
+        return posts
+
+    }
+})
